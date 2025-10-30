@@ -1,0 +1,1325 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tienda JTL — Multi-Tienda (Contraseñas por tienda)</title>
+  <style>
+    :root{
+      --bg:#f8fbff;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent1:#0ea5a9;
+      --accent2:#0369a1;
+      --radius:6px;
+      --btn-radius:999px;
+      --shadow:0 6px 18px rgba(2,6,23,0.06);
+      --max-width:1100px;
+      font-family:Inter,ui-sans-serif,system-ui;
+      color-scheme: light;
+    }
+    body.dark{
+      --bg:#071024;
+      --card:#071a2a;
+      --muted:#9aa6b2;
+      --accent1:#06b6d4;
+      --accent2:#38bdf8;
+      --shadow:0 10px 30px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:#0f172a;}
+    body.dark{color:#e6eef8}
+    a{color:inherit;text-decoration:none}
+    .container{max-width:var(--max-width);margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;gap:16px}
+    .logo{width:56px;height:56px;background:linear-gradient(135deg,var(--accent1),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;box-shadow:var(--shadow)}
+    nav{margin-left:auto;display:flex;gap:12px;align-items:center}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--btn-radius);border:none;cursor:pointer;background:var(--accent2);color:white;font-weight:600}
+    .btn.secondary{background:var(--accent1)}
+    .topbar{display:flex;gap:12px;align-items:center;margin:18px 0}
+    .search input{flex:1;padding:10px 14px;border-radius:999px;border:1px solid #e6edf3;background:white;width:100%}
+    body.dark .search input{background:#052231;border:1px solid rgba(255,255,255,0.06);color:inherit}
+    .products{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+    .card img{height:140px;object-fit:cover;border-radius:6px}
+    .price{font-weight:700;color:var(--accent2)}
+    .badge-cat{display:inline-block;padding:6px 8px;border-radius:999px;background:#eefcfb;color:var(--accent2);font-weight:700;font-size:12px}
+    body.dark .badge-cat{background:rgba(56,189,248,0.08);color:var(--accent2)}
+    .sidebar{position:sticky;top:22px}
+    .cart{background:var(--card);border-radius:var(--radius);padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+    footer{text-align:center;margin-top:20px;color:var(--muted);font-size:13px}
+    .btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+
+    #pass-modal, #admin-panel, #block-modal{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:#00000080;display:none;align-items:center;justify-content:center;
+      padding:20px;backdrop-filter:blur(3px);
+    }
+    .panel-box{
+      background:white;padding:22px 20px;border-radius:12px;
+      width:100%;max-width:420px;max-height:85vh;overflow-y:auto;
+      box-shadow:var(--shadow);animation:fadeIn .2s ease;
+    }
+    body.dark .panel-box{background:var(--card)}
+    #pass-modal .panel-box{max-width:420px;}
+    @keyframes fadeIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+    #admin-panel input, #pass-modal input, #admin-panel select{
+      border:1px solid #d9e1e7;padding:10px 12px;border-radius:8px;
+      font-size:14px;width:100%;margin:6px 0;background:#ffffff;
+      transition:.2s;
+    }
+    body.dark #admin-panel input, body.dark #pass-modal input, body.dark #admin-panel select{
+      background:transparent;border:1px solid rgba(255,255,255,0.06);color:inherit;
+    }
+    #admin-panel input:focus,#pass-modal input:focus,#admin-panel select:focus{
+      border-color:var(--accent2);box-shadow:0 0 0 2px rgb(3 105 161 / 25%);outline:none;
+    }
+    table{width:100%;font-size:14px;border-collapse:collapse;margin-top:10px;}
+    th,td{padding:6px 8px;border-bottom:1px solid #e6edf3;}
+    body.dark th, body.dark td{border-bottom:1px solid rgba(255,255,255,0.03)}
+    th{background:#eefcfb;color:var(--accent2);font-weight:600;}
+    body.dark th{background:rgba(6,182,212,0.06)}
+    tr:hover td{background:#f1fbff;}
+    body.dark tr:hover td{background:rgba(255,255,255,0.02);}
+
+    @media(max-width:768px){
+      .sidebar{display:none;}
+      #floating-cart-btn{
+        position:fixed;bottom:18px;right:18px;background:var(--accent2);
+        color:white;padding:14px 20px;border-radius:999px;font-weight:700;
+        box-shadow:0 8px 18px rgba(0,0,0,.2);cursor:pointer;z-index:9999;
+      }
+      #mobile-cart-panel{
+        position:fixed;bottom:0;left:0;width:100%;
+        background:white;border-radius:16px 16px 0 0;box-shadow:0 -4px 14px rgba(0,0,0,.15);
+        padding:18px;display:none;z-index:99999;max-height:85vh;overflow-y:auto;
+      }
+      body.dark #mobile-cart-panel{background:var(--card)}
+      #mobile-cart-close{text-align:center;margin-bottom:12px;padding:6px;
+        background:#e8eef5;border-radius:8px;font-weight:600;cursor:pointer;}
+    }
+
+    /* small helpers */
+    .muted{color:var(--muted);font-size:13px}
+    .store-list .row{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;margin-bottom:8px;background:#fbfdff}
+    body.dark .store-list .row{background:rgba(255,255,255,0.02)}
+    .muted-small{font-size:12px;color:#56616e}
+    .status-pill{display:inline-block;padding:6px 8px;border-radius:999px;background:#fff6e6;color:#b45309;font-weight:700;font-size:12px}
+    body.dark .status-pill{background:rgba(255,255,255,0.03)}
+
+    /* Subscription card styles (tarjeta – opción 2) */
+    .sub-card{
+      background:linear-gradient(180deg, rgba(6,182,212,0.06), rgba(14,165,166,0.02));
+      border-radius:10px;padding:12px;border:1px solid rgba(3,105,161,0.06);
+      display:flex;flex-direction:column;gap:6px;margin-bottom:8px;
+    }
+    .sub-card h4{margin:0;color:var(--accent2);font-size:16px}
+    .sub-row{display:flex;justify-content:space-between;align-items:center}
+    .sub-status{padding:6px 8px;border-radius:999px;font-weight:700;font-size:13px}
+    .sub-active{background:#ecfeff;color:#0369a1}
+    .sub-expired{background:#fff1f2;color:#9f1239}
+    .sub-warning{background:#fff7ed;color:#92400e}
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">JTL</div>
+    <div>
+      <p style="margin:0;font-weight:600;color:var(--accent2)" id="header-store-name">Tienda JTL</p>
+      <p style="font-size:12px;margin:0;color:var(--muted)" id="header-store-sub">DeliveryYa • Santiago de los Caballeros</p>
+    </div>
+    <nav>
+      <button class="btn sm" id="theme-toggle" title="Cambiar tema">🌙</button>
+      <span id="admin-btn" style="cursor:pointer;font-size:14px;color:var(--accent2);font-weight:600">Admin</span>
+      <a class="btn" id="wa-link" target="_blank">WhatsApp</a>
+    </nav>
+  </header>
+
+  <div class="topbar">
+    <select id="filter-category" style="padding:10px 14px;border-radius:999px;border:1px solid #e6edf3;background:white;">
+      <option value="">Todas</option>
+    </select>
+    <div class="search" style="flex:1;">
+      <input id="search" placeholder="Buscar productos...">
+    </div>
+  </div>
+
+  <main class="layout" style="display:flex;gap:20px;align-items:start">
+    <section style="flex:1"><div class="products" id="products"></div></section>
+    <aside class="sidebar" style="width:320px">
+      <div class="cart">
+        <strong>Carrito</strong>
+        <div id="cart-items"></div>
+        <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span id="subtotal">RD$0</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700"><span>Total</span><span id="total">RD$0</span></div>
+        <button class="btn secondary" id="clear-cart">Vaciar</button>
+        <button class="btn" id="buy-whatsapp">Comprar por WhatsApp</button>
+      </div>
+    </aside>
+  </main>
+
+  <footer>Diseñado para Tienda JTL — Tema Minimal Moderna</footer>
+</div>
+
+<div id="floating-cart-btn">🛒 Carrito</div>
+<div id="mobile-cart-panel">
+  <div id="mobile-cart-close">Cerrar ✖</div>
+  <strong>Carrito</strong>
+  <div id="cart-items-mobile"></div>
+  <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span id="subtotal-mobile">RD$0</span></div>
+  <div style="display:flex;justify-content:space-between;font-weight:700"><span>Total</span><span id="total-mobile">RD$0</span></div>
+  <button class="btn secondary" id="clear-cart-mobile">Vaciar</button>
+  <button class="btn" id="buy-whatsapp-mobile">Comprar por WhatsApp</button>
+</div>
+
+<!-- Modal de login/admin: selector de tienda + contraseña -->
+<div id="pass-modal">
+  <div class="panel-box">
+    <h3>🔐 Acceso — Selecciona la tienda</h3>
+    <select id="login-store-select"></select>
+    <input id="admin-pass" type="password" placeholder="Contraseña de la tienda...">
+    <p id="pass-error" style="color:red;display:none;font-size:13px;margin-top:6px;">Contraseña incorrecta</p>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn" id="pass-enter">Entrar</button>
+      <button class="btn secondary" id="pass-cancel">Cancelar</button>
+    </div>
+    <hr style="margin:12px 0;">
+    <p class="muted-small">*Solo la tienda JTL puede crear o eliminar tiendas.*</p>
+  </div>
+</div>
+
+<!-- Modal bloqueo por falta de pago (sin botón simulador) -->
+<div id="block-modal">
+  <div class="panel-box" style="text-align:center">
+    <h3>🔒 Suscripción vencida</h3>
+    <p id="block-msg">La tienda está bloqueada por falta de pago.</p>
+    <p class="muted-small">Contacta a JTL para desbloquear la tienda.</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">
+      <button class="btn secondary" id="block-cancel-btn">Cerrar</button>
+      <a id="block-wa-btn" class="btn" href="#" target="_blank">Renovar por WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- Panel admin (por tienda) -->
+<div id="admin-panel">
+  <div class="panel-box" style="display:flex;flex-direction:column;gap:10px;">
+    <h2 style="text-align:center;color:var(--accent2);margin-bottom:6px;">📦 Panel Administrativo — Multi-Tienda</h2>
+
+    <!-- Selección de tienda dentro del admin -->
+    <div style="display:flex;gap:8px;align-items:center;">
+      <select id="admin-store-selector" style="flex:1;padding:8px;border-radius:8px;border:1px solid #e6edf3;"></select>
+      <button class="btn sm" id="btn-new-store" style="display:none">+ Nueva</button>
+    </div>
+
+    <div id="new-store-box" style="display:none;padding:10px;background:#fbfdff;border-radius:8px;">
+      <input id="new-store-name" placeholder="Nombre de la tienda">
+      <input id="new-store-wa" placeholder="WhatsApp (ej: 18093108421) - opcional">
+      <input id="new-store-pass" placeholder="Contraseña de administrador">
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <button class="btn" id="create-store">Crear tienda (Paga RD$500 ahora)</button>
+        <button class="btn secondary" id="cancel-create">Cancelar</button>
+      </div>
+    </div>
+
+    <!-- Stats generales de la tienda seleccionada -->
+    <div id="stats" style="padding:10px;margin-bottom:6px;background:#eefcfb;border-radius:8px;">
+      <p><strong>Tienda activa:</strong> <span id="stat-store-name">-</span></p>
+      <p><strong>Total productos:</strong> <span id="stat-count">0</span></p>
+      <p><strong>Unidades en inventario:</strong> <span id="stat-stock">0</span></p>
+      <p><strong>Valor total del inventario:</strong> RD$<span id="stat-value">0</span></p>
+      <p><strong>Ingresos tienda:</strong> RD$<span id="stat-profit">0</span></p>
+      <p><strong>Comisión pendiente para JTL:</strong> RD$<span id="stat-platform">0</span></p>
+      <p><strong>Suscripción:</strong> <span id="stat-sub">—</span></p>
+      <button id="reset-profit" style="margin-top:6px;padding:6px 10px;border:none;background:#d9534f;color:white;border-radius:6px;cursor:pointer;">
+        Resetear Ganancias
+      </button>
+    </div>
+
+    <!-- NEW: Subscription card (visible solo al admin de la tienda) -->
+    <div id="subscription-card-container" style="margin-bottom:6px;display:none;">
+      <!-- content filled dynamically -->
+    </div>
+
+    <!-- Productos: agregar -->
+    <input id="p-name" placeholder="Nombre">
+    <input id="p-category" placeholder="Categoría">
+    <input id="p-price" placeholder="Precio" type="number" min="0" step="0.01">
+    <input id="p-stock" placeholder="Stock" type="number" min="0" step="1">
+    <input id="p-img-file" type="file" accept="image/*">
+    <button class="btn" id="add-product" style="margin-top:6px;">Guardar Producto</button>
+
+    <table>
+      <thead><tr><th>Nombre</th><th>Precio</th><th>Stock</th><th>Cat.</th><th>Acciones</th></tr></thead>
+      <tbody id="admin-list"></tbody>
+    </table>
+
+    <div style="display:flex;gap:8px;">
+      <button class="btn secondary" style="flex:1" id="close-admin">Cerrar</button>
+      <button id="delete-all" style="flex:1;padding:10px;border:none;background:#ef4444;color:white;font-weight:700;border-radius:8px;cursor:pointer;">
+        🗑️ Borrar Datos (esta tienda)
+      </button>
+    </div>
+
+    <hr style="margin:6px 0;">
+    <h3 style="color:var(--accent2);text-align:center;">💵 Venta en Efectivo</h3>
+    <p class="muted" style="text-align:center;margin-top:-6px;">
+      Solo el administrador de la tienda puede registrar pagos en efectivo.
+    </p>
+    <select id="cash-sale-product" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid #e6edf3;">
+      <option value="">Seleccionar producto...</option>
+    </select>
+    <input id="cash-sale-qty" type="number" placeholder="Cantidad vendida" style="margin-top:6px;" min="1" step="1">
+    <input id="cash-sale-paid" type="number" placeholder="Monto recibido (RD$)" style="margin-top:6px;" min="0" step="0.01">
+    <button class="btn" id="cash-sale-btn" style="margin-top:10px;width:100%;">Registrar Venta</button>
+    <div id="cash-sale-result" style="margin-top:10px;font-weight:600;text-align:center;"></div>
+
+    <hr style="margin:8px 0;">
+
+    <div>
+      <h4 style="margin:6px 0;color:var(--accent2)">Tiendas (gestionadas por JTL)</h4>
+      <div class="store-list" id="store-list"></div>
+      <p class="muted">Solo la tienda JTL puede crear/editar/eliminar tiendas.</p>
+    </div>
+
+    <hr style="margin:8px 0;">
+    <h4>Cambiar contraseña de la tienda actual</h4>
+    <input id="change-pass-new" placeholder="Nueva contraseña">
+    <div style="display:flex;gap:8px;">
+      <button class="btn" id="change-pass-btn">Cambiar contraseña</button>
+      <button class="btn secondary" id="toggle-public-btn">Alternar pública/privada</button>
+    </div>
+
+    <div style="margin-top:10px;">
+      <!-- JTL ONLY: campo para editar monto mensual -->
+      <div id="monthly-control" style="display:none;margin-top:6px;">
+        <label style="font-weight:700;margin-bottom:6px;display:block;">Monto mensual (RD$)</label>
+        <input id="monthly-input" placeholder="RD$500">
+        <button class="btn" id="save-monthly-btn" style="margin-top:6px;">Guardar monto mensual</button>
+      </div>
+
+      <!-- JTL ONLY: registrar pago (+30 dias) -->
+      <div style="margin-top:8px;">
+        <button class="btn" id="register-pay-btn" style="width:100%;display:none;">Registrar pago mensual (+30 días)</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ----------------- MULTI-TIENDA con contraseñas, subs y comisiones (modificado) ----------------- */
+/* Estructura de stores:
+   { id, name, whatsapp, password, isPublic, createdAt, subscriptionPaidUntil (ms), blocked (bool) }
+*/
+/* Keys */
+const STORES_KEY = 'jt_stores_v2';
+const ACTIVE_STORE_KEY = 'jt_active_store_v2';
+const THEME_KEY = 'jt_theme_v2';
+const COMMISSION_PERCENT = 5; // 5% global
+const SUBSCRIPTION_DAYS = 30; // periodo de suscripción en días (según tu solicitud)
+const SUBSCRIPTION_MS = SUBSCRIPTION_DAYS * 24 * 60 * 60 * 1000;
+
+// monthly amount configurable (persistido)
+const MONTHLY_KEY = 'jt_monthly_amount_v2';
+const DEFAULT_MONTHLY = 500;
+function getMonthlyAmount(){ return Number(localStorage.getItem(MONTHLY_KEY) || DEFAULT_MONTHLY); }
+function setMonthlyAmount(v){ localStorage.setItem(MONTHLY_KEY, String(Number(v) || DEFAULT_MONTHLY)); }
+
+/* helper keys per store */
+function storeProductsKey(storeId){ return `store_${storeId}_products_v2`; }
+function storeProfitKey(storeId){ return `store_${storeId}_revenue_v2`; } // ingresos de la tienda
+function storePlatformKey(storeId){ return `store_${storeId}_platform_v2`; } // comisión para JTL (lo que deben pagar)
+function storeMetaKey(storeId){ return `store_${storeId}_meta_v2`; } // metadata opcional (aquí guardamos payments)
+
+/* session admin */
+let adminSessionStoreId = null;
+
+/* Ensure default JTL store exists */
+function ensureDefaultStores(){
+  let stores = JSON.parse(localStorage.getItem(STORES_KEY) || 'null');
+  if(!Array.isArray(stores)) stores = [];
+  const hasJtl = stores.some(s => s.id === 'jtl');
+  if(!hasJtl){
+    const now = Date.now();
+    stores.unshift({
+      id: 'jtl',
+      name: 'Tienda JTL',
+      whatsapp: '18093108421',
+      password: 'jesusteamo',
+      isPublic: true,
+      createdAt: now,
+      subscriptionPaidUntil: now + SUBSCRIPTION_MS, // JTL prepagada por un periodo
+      blocked: false
+    });
+  } else {
+    const j = stores.find(s => s.id === 'jtl');
+    if(!j.password) j.password = 'jesusteamo';
+    j.blocked = false; // JTL nunca bloqueada
+  }
+  localStorage.setItem(STORES_KEY, JSON.stringify(stores));
+  if(!localStorage.getItem(ACTIVE_STORE_KEY)) localStorage.setItem(ACTIVE_STORE_KEY, 'jtl');
+  // sample products if none
+  if(!localStorage.getItem(storeProductsKey('jtl'))){
+    const sample = [
+      { id: 'p1', name: 'Pan artesanal', category: 'Panadería', price: 80.00, stock: 10, img: 'https://via.placeholder.com/400x300?text=Pan' },
+      { id: 'p2', name: 'Café 250g', category: 'Bebidas', price: 250.00, stock: 8, img: 'https://via.placeholder.com/400x300?text=Cafe' },
+      { id: 'p3', name: 'Sandwich JTL', category: 'Comidas', price: 180.00, stock: 5, img: 'https://via.placeholder.com/400x300?text=Sandwich' }
+    ];
+    localStorage.setItem(storeProductsKey('jtl'), JSON.stringify(sample));
+  }
+  if(!localStorage.getItem(storeProfitKey('jtl'))) localStorage.setItem(storeProfitKey('jtl'),'0');
+  if(!localStorage.getItem(storePlatformKey('jtl'))) localStorage.setItem(storePlatformKey('jtl'),'0');
+  // ensure monthly amount exists
+  if(!localStorage.getItem(MONTHLY_KEY)) setMonthlyAmount(DEFAULT_MONTHLY);
+}
+function getStores(){ return JSON.parse(localStorage.getItem(STORES_KEY) || '[]'); }
+function saveStores(s){ localStorage.setItem(STORES_KEY, JSON.stringify(s)); }
+function getActiveStoreId(){ return localStorage.getItem(ACTIVE_STORE_KEY) || (getStores()[0] && getStores()[0].id) || null; }
+function setActiveStoreId(id){ localStorage.setItem(ACTIVE_STORE_KEY, id); }
+
+ensureDefaultStores();
+
+let activeStoreId = getActiveStoreId();
+let products = JSON.parse(localStorage.getItem(storeProductsKey(activeStoreId)) || '[]');
+let totalRevenue = Number(localStorage.getItem(storeProfitKey(activeStoreId)) || 0);
+let cart = [];
+
+/* ---------- helpers ---------- */
+function findStore(id){ return getStores().find(s => s.id === id); }
+function formatRD(value){ return 'RD$' + Number(value).toFixed(2); }
+function saveProductsFor(storeId, list){ localStorage.setItem(storeProductsKey(storeId), JSON.stringify(list)); }
+function loadProductsFor(storeId){ return JSON.parse(localStorage.getItem(storeProductsKey(storeId)) || '[]'); }
+function saveProfitFor(storeId, val){ localStorage.setItem(storeProfitKey(storeId), String(val)); }
+function getProfitFor(storeId){ return Number(localStorage.getItem(storeProfitKey(storeId)) || 0); }
+function savePlatformFor(storeId, val){ localStorage.setItem(storePlatformKey(storeId), String(val)); }
+function getPlatformFor(storeId){ return Number(localStorage.getItem(storePlatformKey(storeId)) || 0); }
+function saveMetaFor(storeId, obj){ localStorage.setItem(storeMetaKey(storeId), JSON.stringify(obj || {})); }
+function loadMetaFor(storeId){ return JSON.parse(localStorage.getItem(storeMetaKey(storeId)) || '{}'); }
+function isSubscriptionActive(store){ if(!store) return false; if(store.id === 'jtl') return true; const t = Number(store.subscriptionPaidUntil || 0); return Date.now() <= t; }
+function daysUntil(ms){ return Math.max(0, Math.ceil((ms - Date.now()) / (24*60*60*1000))); }
+
+/* ---------- DOM ---------- */
+const productsWrap = document.getElementById('products');
+const cartItems = document.getElementById('cart-items');
+const subtotalEl = document.getElementById('subtotal');
+const totalEl = document.getElementById('total');
+
+const mobileCartPanel = document.getElementById('mobile-cart-panel');
+const floatingCartBtn = document.getElementById('floating-cart-btn');
+
+const adminBtn = document.getElementById('admin-btn');
+const passModal = document.getElementById('pass-modal');
+const adminPanel = document.getElementById('admin-panel');
+const passError = document.getElementById('pass-error');
+
+const pName = document.getElementById('p-name');
+const pCategory = document.getElementById('p-category');
+const pPrice = document.getElementById('p-price');
+const pStock = document.getElementById('p-stock');
+const pImgFile = document.getElementById('p-img-file');
+
+const statCount = document.getElementById('stat-count');
+const statStock = document.getElementById('stat-stock');
+const statValue = document.getElementById('stat-value');
+const statProfit = document.getElementById('stat-profit');
+const statPlatform = document.getElementById('stat-platform');
+const statStoreName = document.getElementById('stat-store-name');
+const statSub = document.getElementById('stat-sub');
+
+const filterCategory = document.getElementById('filter-category');
+const searchInput = document.getElementById('search');
+
+const adminStoreSelector = document.getElementById('admin-store-selector');
+const btnNewStore = document.getElementById('btn-new-store');
+const newStoreBox = document.getElementById('new-store-box');
+const newStoreName = document.getElementById('new-store-name');
+const newStoreWa = document.getElementById('new-store-wa');
+const newStorePass = document.getElementById('new-store-pass');
+const createStoreBtn = document.getElementById('create-store');
+const cancelCreateBtn = document.getElementById('cancel-create');
+
+const adminListTbody = document.getElementById('admin-list');
+const cashSelect = document.getElementById('cash-sale-product');
+const cashQty = document.getElementById('cash-sale-qty');
+const cashPaid = document.getElementById('cash-sale-paid');
+const cashResult = document.getElementById('cash-sale-result');
+
+const storeListDiv = document.getElementById('store-list');
+
+const headerStoreName = document.getElementById('header-store-name');
+const headerStoreSub = document.getElementById('header-store-sub');
+const waLink = document.getElementById('wa-link');
+
+/* Login modal elements */
+const loginStoreSelect = document.getElementById('login-store-select');
+const loginPassInput = document.getElementById('admin-pass');
+const passEnterBtn = document.getElementById('pass-enter');
+const passCancelBtn = document.getElementById('pass-cancel');
+
+/* block modal */
+const blockModal = document.getElementById('block-modal');
+const blockCancelBtn = document.getElementById('block-cancel-btn');
+const blockMsg = document.getElementById('block-msg');
+const blockWaBtn = document.getElementById('block-wa-btn');
+
+/* change pass / public toggle */
+const changePassInput = document.getElementById('change-pass-new');
+const changePassBtn = document.getElementById('change-pass-btn');
+const togglePublicBtn = document.getElementById('toggle-public-btn');
+
+const markPaidBtn = document.getElementById('register-pay-btn');
+const monthlyControlDiv = document.getElementById('monthly-control');
+const monthlyInput = document.getElementById('monthly-input');
+const saveMonthlyBtn = document.getElementById('save-monthly-btn');
+
+const themeToggle = document.getElementById('theme-toggle');
+
+const subscriptionCardContainer = document.getElementById('subscription-card-container');
+
+/* ---------- Header / WA / Theme ---------- */
+function renderHeader(){
+  const store = findStore(activeStoreId) || {name: 'Sin tienda', whatsapp: '18093108421'};
+  headerStoreName.textContent = store.name;
+  headerStoreSub.textContent = `DeliveryYa • Santiago de los Caballeros`;
+  waLink.href = `https://wa.me/${store.whatsapp || '18093108421'}`;
+  waLink.textContent = 'WhatsApp';
+}
+
+function applyThemeFromStorage(){
+  const t = localStorage.getItem(THEME_KEY) || 'light';
+  if(t === 'dark') document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+  themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
+themeToggle.onclick = () => {
+  document.body.classList.toggle('dark');
+  const now = document.body.classList.contains('dark') ? 'dark' : 'light';
+  localStorage.setItem(THEME_KEY, now);
+  themeToggle.textContent = now === 'dark' ? '☀️' : '🌙';
+};
+
+/* ---------- Subscription utilities ---------- */
+
+/**
+ * Obtiene la fecha (timestamp ms) del último pago registrado en meta.payments (si existe).
+ * Si no hay pagos y existe subscriptionPaidUntil, deduce el inicio como (paidUntil - SUBSCRIPTION_MS).
+ * Retorna null si no puede deducir.
+ */
+function getSubscriptionPeriodStart(storeId){
+  const meta = loadMetaFor(storeId);
+  if(meta && Array.isArray(meta.payments) && meta.payments.length > 0){
+    // usar el último pago como inicio del periodo actual
+    const last = meta.payments[meta.payments.length - 1];
+    if(last && last.when) return Number(last.when);
+  }
+  const stores = getStores();
+  const s = stores.find(x => x.id === storeId);
+  if(s && s.subscriptionPaidUntil){
+    const paidUntil = Number(s.subscriptionPaidUntil);
+    // asumir periodo de SUBSCRIPTION_MS antes de paidUntil
+    return paidUntil - SUBSCRIPTION_MS;
+  }
+  return null;
+}
+
+/**
+ * Calcula daysUsed y daysRemaining para una tienda dada.
+ * También determina estado: 'active'|'expiring'|'expired'
+ */
+function computeSubscriptionInfo(storeId){
+  const s = findStore(storeId);
+  if(!s) return { daysUsed: 0, daysRemaining: 0, status: 'expired' };
+  if(s.id === 'jtl') return { daysUsed: 0, daysRemaining: Infinity, status: 'active' }; // JTL siempre activa
+
+  const start = getSubscriptionPeriodStart(storeId);
+  const paidUntil = Number(s.subscriptionPaidUntil || 0);
+  const now = Date.now();
+
+  // Si no hay paidUntil o start, tratar como vencido
+  if(!paidUntil || !start){
+    return { daysUsed: 0, daysRemaining: 0, status: 'expired' };
+  }
+
+  const daysUsed = Math.max(0, Math.min(SUBSCRIPTION_DAYS, Math.ceil((now - start) / (24*60*60*1000))));
+  const daysRemaining = Math.max(0, Math.ceil((paidUntil - now) / (24*60*60*1000)));
+
+  let status = 'active';
+  if(daysRemaining <= 0) status = 'expired';
+  else if(daysRemaining <= 3) status = 'expiring';
+
+  return { daysUsed, daysRemaining, status, startAt: start, paidUntil };
+}
+
+/* Renderiza la tarjeta de suscripción dentro del admin (visible solo al admin de la tienda) */
+function renderSubscriptionCardFor(storeId){
+  // solo mostrar si hay sesión admin y corresponde a la tienda (o si JTL visualizando)
+  if(!adminSessionStoreId) { subscriptionCardContainer.style.display = 'none'; return; }
+  if(!(adminSessionStoreId === storeId || adminSessionStoreId === 'jtl')) { subscriptionCardContainer.style.display = 'none'; return; }
+
+  const info = computeSubscriptionInfo(storeId);
+  subscriptionCardContainer.style.display = 'block';
+  const store = findStore(storeId) || { name: storeId };
+  // construir HTML tarjeta
+  let statusClass = 'sub-active', statusText = 'Activa';
+  if(info.status === 'expired'){ statusClass = 'sub-expired'; statusText = 'Vencida'; }
+  else if(info.status === 'expiring'){ statusClass = 'sub-warning'; statusText = 'Por vencer'; }
+
+  subscriptionCardContainer.innerHTML = `
+    <div class="sub-card">
+      <h4>🗓 Suscripción — ${store.name}</h4>
+      <div class="sub-row"><div>Días usados</div><div><strong>${info.daysUsed}</strong></div></div>
+      <div class="sub-row"><div>Días restantes</div><div><strong>${info.daysRemaining === Infinity ? '—' : info.daysRemaining}</strong></div></div>
+      <div class="sub-row"><div>Estado</div><div><span class="sub-status ${statusClass}">${statusText}</span></div></div>
+      <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end">
+        <button class="btn secondary" id="btn-renew-now">Renovar ahora</button>
+      </div>
+    </div>
+  `;
+
+  // manejar click renovar (abre WhatsApp con mensaje prellenado al número definido)
+  const renewBtn = document.getElementById('btn-renew-now');
+  if(renewBtn){
+    renewBtn.onclick = () => {
+      const wa = 'https://wa.me/18093108421?text=' + encodeURIComponent(`Hola, quiero renovar la suscripción de la tienda "${store.name}" (ID: ${storeId}).`);
+      window.open(wa, '_blank');
+    };
+  }
+
+  // si expiró -> bloquear TODO el sistema (según tu opción 2)
+  if(info.status === 'expired' && adminSessionStoreId === storeId){
+    // mostrar modal de bloqueo y redirigir a WhatsApp para renovar
+    blockAndRedirectFor(storeId, store.name);
+  }
+}
+
+/* Bloquear todo el sistema y redirigir a WhatsApp (cuando expire la suscripción de admin) */
+function blockAndRedirectFor(storeId, storeName){
+  // bloquear UI: mostrar blockModal con información y botón a WhatsApp
+  document.getElementById('block-msg').textContent = `La tienda "${storeName}" está bloqueada porque la suscripción de la tienda venció.`;
+  blockWaBtn.href = `https://wa.me/8093108421?text=${encodeURIComponent(`Hola, necesito renovar la suscripción de la tienda "${storeName}" (ID: ${storeId}).`)}`
+  blockModal.style.display = 'flex';
+
+  // bloquear interacción: añadir clase al body o similar (simple approach: hide admin panel & public UI)
+  adminPanel.style.display = 'none';
+  // Opcional: también bloquear la vista pública evitando compras (impl. simple: interceptar botones)
+  // Para esta implementación, vamos a deshabilitar botones de compra y añadir aviso.
+  document.querySelectorAll('.btn').forEach(b => {
+    if(!b.id || b.id === 'block-cancel-btn' || b.id === 'block-wa-btn') {
+      // keep cancel and wa btn active in modal
+    } else {
+      b.disabled = true;
+      b.style.opacity = '0.6';
+      b.style.pointerEvents = 'none';
+    }
+  });
+
+  // Si quieres redirigir automáticamente (opcional), puedes comentar la siguiente línea.
+  // Aquí evitamos una redirección automática inmediata para no romper la UX; el modal tiene el botón renovar.
+  // setTimeout(() => window.open(`https://wa.me/8093108421?text=${encodeURIComponent('Necesito renovar')}`, '_blank'), 3000);
+
+  blockCancelBtn.onclick = () => {
+    // permitir cerrar modal pero mantener sistema bloqueado (según opción 2) — para desbloquear, JTL debe registrar pago
+    blockModal.style.display = 'none';
+  };
+}
+
+/* cada minuto actualizar tarjeta si admin panel está abierto */
+let subscriptionInterval = null;
+function startSubscriptionInterval(){
+  if(subscriptionInterval) clearInterval(subscriptionInterval);
+  subscriptionInterval = setInterval(() => {
+    // actualizar tarjeta si está visible (y admin panel abierto)
+    if(adminPanel.style.display === 'flex'){
+      const cur = adminStoreSelector.value || activeStoreId;
+      renderSubscriptionCardFor(cur);
+    }
+  }, 60 * 1000); // cada minuto
+}
+
+/* ---------- Productos / UI ---------- */
+function renderStats(){
+  const c = products.length;
+  const u = products.reduce((a,b)=>a+(b.stock||0),0);
+  const v = products.reduce((a,b)=>a + ((b.stock||0) * (Number(b.price)||0)), 0);
+  statCount.textContent = c;
+  statStock.textContent = u;
+  statValue.textContent = v.toFixed(2);
+  statProfit.textContent = getProfitFor(adminStoreSelector.value || activeStoreId).toFixed(2);
+  statPlatform.textContent = getPlatformFor(adminStoreSelector.value || activeStoreId).toFixed(2);
+  statStoreName.textContent = findStore(activeStoreId)?.name || '-';
+  const st = findStore(adminStoreSelector.value || activeStoreId);
+  if(st){
+    if(isSubscriptionActive(st)){
+      const until = new Date(st.subscriptionPaidUntil);
+      statSub.textContent = `Activa — vence en ${daysUntil(st.subscriptionPaidUntil)} días (${until.toLocaleDateString()})`;
+    } else {
+      statSub.textContent = 'Vencida — bloqueada';
+    }
+  } else statSub.textContent = '-';
+}
+
+function loadCategoryFilter(){
+  const cats = [...new Set(products.map(p => p.category || 'General'))];
+  filterCategory.innerHTML = `<option value="">Todas</option>` + cats.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('');
+}
+
+function renderProducts(filterText = ''){
+  productsWrap.innerHTML = '';
+  const cat = filterCategory.value.toLowerCase() || '';
+  const ft = filterText.toLowerCase();
+  const list = products.filter(p => {
+    const n = (p.name||'').toLowerCase();
+    const c = (p.category||'general').toLowerCase();
+    return (n.includes(ft) || c.includes(ft)) && (cat === '' || c === cat);
+  });
+
+  if(list.length === 0){
+    productsWrap.innerHTML = '<p>No hay productos</p>';
+    return;
+  }
+
+  list.forEach(p => {
+    const s = p.stock > 1 ? `<small>Stock: ${p.stock}</small>` : p.stock === 1 ? `<small style="color:#f97316">🔔 Última unidad</small>` : `<small style="color:red">Agotado</small>`;
+    const card = document.createElement('div');
+    card.className = 'card';
+    const img = p.img || 'https://via.placeholder.com/400x300?text=No+Image';
+    card.innerHTML = `
+      <img src="${img}" alt="${p.name}">
+      <h4 style="margin:6px 0 0 0">${p.name}</h4>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+        <span class="price">${formatRD(p.price)}</span><span class="badge-cat">${p.category||'General'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        ${s}
+        <div>
+          <button class="btn sm secondary" ${p.stock<=0?'disabled':''} data-add="${p.id}">Añadir</button>
+          <button class="btn sm" style="margin-left:6px" data-wa="${p.id}">Pedir</button>
+        </div>
+      </div>
+    `;
+    productsWrap.appendChild(card);
+  });
+
+  productsWrap.querySelectorAll('[data-add]').forEach(btn => {
+    btn.onclick = () => addToCart(btn.getAttribute('data-add'));
+  });
+  productsWrap.querySelectorAll('[data-wa]').forEach(btn => {
+    btn.onclick = () => {
+      const pid = btn.getAttribute('data-wa');
+      const p = products.find(x=>x.id===pid);
+      if(!p) return;
+      const store = findStore(activeStoreId);
+      const waNumber = store?.whatsapp || '18093108421';
+      const msg = encodeURIComponent(`Hola, quiero pedir: *${p.name}* — ${formatRD(p.price)} desde *${store?.name || 'la tienda'}*`);
+      window.open(`https://wa.me/${waNumber}?text=${msg}`, '_blank');
+    };
+  });
+
+  renderStats();
+}
+
+function renderCart(){
+  const cont = [
+    { w: cartItems, s: subtotalEl, t: totalEl },
+    { w: document.getElementById('cart-items-mobile'), s: document.getElementById('subtotal-mobile'), t: document.getElementById('total-mobile') }
+  ];
+  cont.forEach(c => c.w.innerHTML = '');
+  let sub = 0;
+  cart.forEach(it => {
+    const p = products.find(x => x.id === it.id);
+    if(!p) return;
+    const line = document.createElement('div');
+    line.style.marginBottom = '8px';
+    line.innerHTML = `${p.name} x${it.qty} <span style="float:right">${formatRD(p.price * it.qty)}</span>`;
+    cont.forEach(c => c.w.appendChild(line.cloneNode(true)));
+    sub += p.price * it.qty;
+  });
+  cont.forEach(c => { c.s.textContent = formatRD(sub); c.t.textContent = formatRD(sub); });
+}
+
+function addToCart(id){
+  const p = products.find(x => x.id === id);
+  if(!p) return alert('Producto no encontrado');
+  if(p.stock <= 0) return alert('Sin stock');
+  const ex = cart.find(c => c.id === id);
+  if(ex){
+    if(ex.qty < p.stock) ex.qty++;
+    else return alert('Stock insuficiente');
+  } else {
+    cart.push({ id, qty: 1 });
+  }
+  renderCart();
+}
+
+/* ---------- carrito botones ---------- */
+document.getElementById('clear-cart').onclick = () => { cart = []; renderCart(); };
+document.getElementById('clear-cart-mobile').onclick = () => { cart = []; renderCart(); mobileCartPanel.style.display = 'none'; };
+
+document.getElementById('buy-whatsapp').onclick = buyWhatsAppHandler;
+document.getElementById('buy-whatsapp-mobile').onclick = () => { buyWhatsAppHandler(); mobileCartPanel.style.display = 'none'; };
+
+function buyWhatsAppHandler(){
+  if(cart.length === 0) return alert('Carrito vacío');
+  const store = findStore(activeStoreId);
+  if(!isSubscriptionActive(store)){
+    showBlockModalFor(activeStoreId);
+    return;
+  }
+
+  let total = 0;
+  let commissionTotal = 0;
+  let msg = "🛍 *Pedido*%0A%0A";
+  cart.forEach(it => {
+    const p = products.find(x => x.id === it.id);
+    if(!p) return;
+    total += p.price * it.qty;
+    msg += `• ${p.name} x${it.qty} - RD$${(p.price*it.qty).toFixed(2)}%0A`;
+    p.stock -= it.qty;
+    if(p.stock < 0) p.stock = 0;
+    let storeRevenue = getProfitFor(activeStoreId);
+    storeRevenue += p.price * it.qty;
+    saveProfitFor(activeStoreId, storeRevenue);
+    const commission = (p.price * it.qty) * (COMMISSION_PERCENT/100);
+    commissionTotal += commission;
+    let platform = getPlatformFor(activeStoreId);
+    platform += commission;
+    savePlatformFor(activeStoreId, platform);
+  });
+
+  saveProductsFor(activeStoreId, products);
+  renderProducts();
+  renderStats();
+  cart = [];
+  renderCart();
+  msg += `%0A💰 *Total:* RD$${total.toFixed(2)}%0A%0A🚚 *DeliveryYa — Santiago*%0A%0A¿Dirección para entregar?`;
+  const wa = `https://wa.me/${findStore(activeStoreId)?.whatsapp || '18093108421'}?text=` + msg;
+  window.open(wa, '_blank');
+}
+
+/* ---------- LOGIN ADMIN: ahora por tienda (con bloqueo) ---------- */
+adminBtn.onclick = () => {
+  populateLoginStores();
+  passError.style.display = 'none';
+  loginPassInput.value = '';
+  passModal.style.display = 'flex';
+};
+
+function populateLoginStores(){
+  const stores = getStores();
+  loginStoreSelect.innerHTML = stores.map(s => `<option value="${s.id}">${s.name} ${s.isPublic ? '( pública )' : '( privada )'}</option>`).join('');
+}
+
+/* Entrar (login) */
+passEnterBtn.onclick = () => {
+  const sel = loginStoreSelect.value;
+  const pass = loginPassInput.value || '';
+  const store = findStore(sel);
+  if(!store) return alert('Tienda no encontrada');
+  if(pass === store.password){
+    // check subscription for non-JTL
+    if(!isSubscriptionActive(store) && store.id !== 'jtl'){
+      passModal.style.display = 'none';
+      showBlockModalFor(sel);
+      return;
+    }
+    passModal.style.display = 'none';
+    loginPassInput.value = '';
+    passError.style.display = 'none';
+    // establecer sesión admin para la tienda autenticada
+    adminSessionStoreId = sel;
+    adminPanel.style.display = 'flex';
+    initAdminUI(sel);
+    renderAdminControlsVisibility();
+    startSubscriptionInterval();
+  } else {
+    passError.style.display = 'block';
+  }
+};
+passCancelBtn.onclick = () => { passModal.style.display = 'none'; passError.style.display = 'none'; };
+
+/* Mostrar modal de bloqueo para tienda determinada (sin pago simulado) */
+function showBlockModalFor(storeId){
+  const store = findStore(storeId);
+  if(!store) return;
+  document.getElementById('block-msg').textContent = `La tienda "${store.name}" está bloqueada porque no pagó la mensualidad de RD$${getMonthlyAmount()}.`;
+  blockWaBtn.href = `https://wa.me/8093108421?text=${encodeURIComponent('Hola, quiero renovar la suscripción de la tienda "'+store.name+'"')}`;
+  blockModal.style.display = 'flex';
+  blockCancelBtn.onclick = () => blockModal.style.display = 'none';
+}
+
+/* NOTA: creación de tiendas solo disponible si adminSessionStoreId === 'jtl' */
+/* Crear tienda desde admin (solo JTL puede hacerlo) */
+btnNewStore.onclick = () => {
+  if(adminSessionStoreId !== 'jtl') return;
+  newStoreBox.style.display = newStoreBox.style.display === 'none' ? 'block' : 'none';
+};
+cancelCreateBtn.onclick = () => { newStoreBox.style.display = 'none'; newStoreName.value = newStoreWa.value = newStorePass.value = ''; };
+
+createStoreBtn.onclick = () => {
+  if(adminSessionStoreId !== 'jtl') return alert('Solo JTL puede crear tiendas');
+  const name = (newStoreName.value || '').trim();
+  const wa = (newStoreWa.value || '').trim() || '18093108421';
+  const pass = (newStorePass.value || '').trim() || '';
+  if(!name) return alert('Nombre requerido');
+  if(!pass) return alert('Contraseña requerida');
+  const id = name.toLowerCase().replace(/\s+/g,'_') + '_' + Date.now();
+  const stores = getStores();
+  const now = Date.now();
+  // al crear, marcamos pago inicial +30 días
+  const subscriptionPaidUntil = now + SUBSCRIPTION_MS;
+  stores.push({ id, name, whatsapp: wa, password: pass, isPublic: false, createdAt: now, subscriptionPaidUntil, blocked: false });
+  saveStores(stores);
+  saveProductsFor(id, []);
+  saveProfitFor(id, 0);
+  savePlatformFor(id, 0);
+  // registrar un pago inicial en meta (historial)
+  const meta = loadMetaFor(id);
+  meta.payments = meta.payments || [];
+  meta.payments.push({ when: now, amount: getMonthlyAmount(), by: 'jtl_initial' });
+  saveMetaFor(id, meta);
+
+  newStoreBox.style.display = 'none';
+  newStoreName.value = newStoreWa.value = newStorePass.value = '';
+  renderStoreList();
+  adminStoreSelector.innerHTML = stores.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  adminStoreSelector.value = id;
+  loadAdminList();
+  loadCashSelect();
+  alert('Tienda creada correctamente y mensualidad inicial marcada como pagada por 30 días.');
+};
+
+/* ---------- Admin panel (inicializar con tienda específica) ---------- */
+function initAdminUI(storeId){
+  activeStoreId = storeId || getActiveStoreId();
+  const stores = getStores();
+  adminStoreSelector.innerHTML = stores.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  adminStoreSelector.value = activeStoreId;
+
+  if(adminSessionStoreId && adminSessionStoreId !== 'jtl'){
+    adminStoreSelector.value = adminSessionStoreId;
+    adminStoreSelector.disabled = true;
+    btnNewStore.style.display = 'none';
+    document.getElementById('delete-all').style.display = 'none';
+    togglePublicBtn.style.display = 'none';
+    changePassInput.placeholder = 'Cambiar contraseña de tu tienda';
+  } else {
+    adminStoreSelector.disabled = false;
+    btnNewStore.style.display = 'inline-flex';
+    document.getElementById('delete-all').style.display = 'inline-flex';
+    togglePublicBtn.style.display = 'inline-flex';
+    changePassInput.placeholder = 'Nueva contraseña';
+  }
+
+  renderStoreList();
+
+  products = loadProductsFor(adminStoreSelector.value);
+  totalRevenue = Number(localStorage.getItem(storeProfitKey(adminStoreSelector.value)) || 0);
+  loadAdminList();
+  loadCashSelect();
+  renderStats();
+  loadCategoryFilter();
+
+  // render subscription card for the selected store (if admin)
+  renderSubscriptionCardFor(adminStoreSelector.value);
+
+  adminStoreSelector.onchange = () => {
+    const cur = adminStoreSelector.value;
+    products = loadProductsFor(cur);
+    totalRevenue = Number(localStorage.getItem(storeProfitKey(cur)) || 0);
+    activeStoreId = cur;
+    renderStats();
+    loadCategoryFilter();
+    loadAdminList();
+    loadCashSelect();
+    renderAdminControlsVisibility();
+    renderSubscriptionCardFor(cur);
+  };
+}
+
+/* ---------- Lista admin y acciones de tiendas ---------- */
+function renderStoreList(){
+  const stores = getStores();
+  storeListDiv.innerHTML = '';
+  stores.forEach(s => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const subActive = isSubscriptionActive(s);
+    row.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="width:36px;height:36px;background:linear-gradient(135deg,var(--accent1),var(--accent2));border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;">${s.name.slice(0,2).toUpperCase()}</div>
+        <div>
+          <div style="font-weight:700">${s.name}${s.id==='jtl' ? ' — (Principal)' : ''}</div>
+          <div class="muted" style="font-size:12px">WA: ${s.whatsapp || '—'}</div>
+          <div style="margin-top:4px">${subActive ? '<span class="status-pill">Suscripción activa</span>' : '<span class="status-pill">Suscripción vencida</span>'}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn sm" data-make="${s.id}" ${adminSessionStoreId === 'jtl' ? '' : 'disabled'}>${s.isPublic ? 'Pública' : 'Hacer pública'}</button>
+        <button class="btn sm" data-pay="${s.id}" ${adminSessionStoreId === 'jtl' ? '' : 'disabled'} ${subActive ? 'disabled' : ''}>Marcar pagada</button>
+        <button class="btn sm" data-del="${s.id}" style="background:#ef4444" ${(adminSessionStoreId === 'jtl' && s.id !== 'jtl') ? '' : 'disabled'}>Eliminar</button>
+      </div>
+    `;
+    storeListDiv.appendChild(row);
+  });
+
+  // manejadores
+  storeListDiv.querySelectorAll('[data-make]').forEach(b => {
+    b.onclick = () => {
+      const id = b.getAttribute('data-make');
+      if(adminSessionStoreId !== 'jtl') return alert('No tienes permiso para cambiar esto');
+      const stores = getStores();
+      const st = stores.find(x=>x.id===id);
+      if(!st) return;
+      st.isPublic = !st.isPublic;
+      saveStores(stores);
+      renderStoreList();
+      alert(st.isPublic ? 'Tienda marcada como pública.' : 'Tienda marcada como privada.');
+    };
+  });
+
+  storeListDiv.querySelectorAll('[data-pay]').forEach(b => {
+    b.onclick = () => {
+      const id = b.getAttribute('data-pay');
+      if(adminSessionStoreId !== 'jtl') return alert('Solo JTL puede marcar mensualidades como pagadas.');
+      // aplicar pago +30 días
+      markMonthlyPaidFor(id);
+      renderStoreList();
+      renderStats();
+      alert('Mensualidad registrada (+30 días).');
+    };
+  });
+
+  storeListDiv.querySelectorAll('[data-del]').forEach(b => {
+    b.onclick = () => {
+      const id = b.getAttribute('data-del');
+      if(id === 'jtl') return alert('La tienda JTL no puede eliminarse.');
+      if(adminSessionStoreId !== 'jtl') return alert('No tienes permiso para eliminar tiendas');
+      if(confirm('Eliminar esta tienda y TODOS sus datos? Esta acción es irreversible.')){
+        let stores = getStores().filter(s => s.id !== id);
+        saveStores(stores);
+        localStorage.removeItem(storeProductsKey(id));
+        localStorage.removeItem(storeProfitKey(id));
+        localStorage.removeItem(storePlatformKey(id));
+        localStorage.removeItem(storeMetaKey(id));
+        if(getActiveStoreId() === id){
+          const newActive = stores[0] ? stores[0].id : 'jtl';
+          setActiveStoreId(newActive);
+          activeStoreId = getActiveStoreId();
+        }
+        adminStoreSelector.innerHTML = stores.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        adminStoreSelector.value = activeStoreId;
+        renderStoreList();
+        initPublicUI();
+        alert('Tienda eliminada.');
+      }
+    };
+  });
+}
+
+/* ---------- Admin: lista productos y eliminar ---------- */
+function loadAdminList(){
+  adminListTbody.innerHTML = '';
+  const cur = adminStoreSelector.value || activeStoreId;
+  const list = loadProductsFor(cur);
+  list.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.name}</td><td>${formatRD(p.price)}</td><td>${p.stock}</td><td>${p.category||'General'}</td>
+      <td>
+        <button class="btn sm" data-del="${p.id}">Eliminar</button>
+      </td>`;
+    adminListTbody.appendChild(tr);
+  });
+  adminListTbody.querySelectorAll('[data-del]').forEach(b => {
+    b.onclick = () => {
+      const id = b.getAttribute('data-del');
+      if(confirm('Eliminar este producto?')){
+        let curList = loadProductsFor(adminStoreSelector.value || activeStoreId);
+        curList = curList.filter(x => x.id !== id);
+        saveProductsFor(adminStoreSelector.value || activeStoreId, curList);
+        if((adminStoreSelector.value || activeStoreId) === activeStoreId){
+          products = curList;
+          renderProducts();
+          renderCart();
+          renderStats();
+        }
+        loadAdminList();
+        loadCategoryFilter();
+        loadCashSelect();
+      }
+    };
+  });
+}
+
+/* Borrar todos los datos de la tienda seleccionada (solo tienda propietaria puede borrar sus datos) */
+document.getElementById('delete-all').onclick = () => {
+  const cur = adminStoreSelector.value || activeStoreId;
+  if(!cur) return;
+  if(!(adminSessionStoreId === 'jtl' || adminSessionStoreId === cur)) return alert('No tienes permiso para borrar todos los datos de esta tienda.');
+  if(confirm('¿Borrar TODOS los datos de esta tienda? (productos, ganancias, carrito)')){
+    localStorage.removeItem(storeProductsKey(cur));
+    localStorage.removeItem(storeProfitKey(cur));
+    localStorage.removeItem(storePlatformKey(cur));
+    localStorage.removeItem(storeMetaKey(cur));
+    saveProductsFor(cur, []);
+    saveProfitFor(cur, 0);
+    savePlatformFor(cur, 0);
+    if(cur === activeStoreId){
+      products = [];
+      totalRevenue = 0;
+      renderProducts();
+      renderCart();
+      renderStats();
+      loadCategoryFilter();
+    }
+    loadAdminList();
+    loadCashSelect();
+    alert('Datos eliminados para la tienda seleccionada');
+  }
+};
+
+/* ---------- Agregar producto ---------- */
+document.getElementById('add-product').onclick = () => {
+  const name = pName.value.trim();
+  const category = pCategory.value.trim() || 'General';
+  const price = Number(pPrice.value) || 0;
+  const stock = Number(pStock.value) || 0;
+  if(!name || price <= 0){
+    return alert('El producto necesita un nombre y un precio mayor a 0');
+  }
+
+  const imgFile = pImgFile.files[0];
+  const currentStore = adminStoreSelector.value || activeStoreId;
+  const targetStore = (adminSessionStoreId && adminSessionStoreId !== 'jtl') ? adminSessionStoreId : currentStore;
+  let storeProducts = loadProductsFor(targetStore);
+
+  function finishAdd(img){
+    const newP = { id: Date.now().toString(), name, category, price, stock, img };
+    storeProducts.push(newP);
+    saveProductsFor(targetStore, storeProducts);
+    if(targetStore === activeStoreId){
+      products = storeProducts;
+      saveProfitFor(activeStoreId, totalRevenue);
+      renderProducts();
+      renderCart();
+      renderStats();
+      loadCategoryFilter();
+    }
+    pName.value = pCategory.value = pPrice.value = pStock.value = '';
+    pImgFile.value = '';
+    loadAdminList();
+    loadCashSelect();
+    alert('Producto guardado');
+  }
+
+  if(imgFile){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      finishAdd(e.target.result);
+    };
+    reader.readAsDataURL(imgFile);
+  } else {
+    finishAdd('https://via.placeholder.com/400x300?text=No+Image');
+  }
+};
+
+/* ---------- Venta en efectivo (con comisión) ---------- */
+function loadCashSelect(){
+  const cur = adminStoreSelector.value || activeStoreId;
+  const list = loadProductsFor(cur);
+  cashSelect.innerHTML = '<option value="">Seleccionar producto...</option>' + list.map(p => `<option value="${p.id}">${p.name} — ${formatRD(p.price)}</option>`).join('');
+}
+
+document.getElementById('cash-sale-btn').onclick = () => {
+  const id = cashSelect.value;
+  const qty = Number(cashQty.value) || 0;
+  const paid = Number(cashPaid.value) || 0;
+  cashResult.textContent = '';
+  const cur = adminStoreSelector.value || activeStoreId;
+  if(!(adminSessionStoreId === 'jtl' || adminSessionStoreId === cur)) return alert('No tienes permiso para registrar ventas en esta tienda.');
+  const storeObj = findStore(cur);
+  if(!isSubscriptionActive(storeObj) && storeObj.id !== 'jtl') return alert('La suscripción de esta tienda está vencida. No puede registrar ventas.');
+  if(!id) return alert('Selecciona un producto');
+  if(qty <= 0) return alert('Cantidad inválida');
+  const list = loadProductsFor(cur);
+  const p = list.find(x => x.id === id);
+  if(!p) return alert('Producto no encontrado');
+  if(qty > p.stock) return alert('Stock insuficiente');
+
+  const total = p.price * qty;
+  if(paid < total) return alert('El monto recibido no cubre la venta');
+
+  const change = paid - total;
+  p.stock -= qty;
+  if(p.stock < 0) p.stock = 0;
+  let revenue = Number(localStorage.getItem(storeProfitKey(cur)) || 0);
+  revenue += total;
+  saveProfitFor(cur, revenue);
+  const commission = total * (COMMISSION_PERCENT/100);
+  let platform = getPlatformFor(cur);
+  platform += commission;
+  savePlatformFor(cur, platform);
+  saveProductsFor(cur, list);
+  if(cur === activeStoreId){
+    products = list;
+    totalRevenue = revenue;
+    renderProducts();
+    renderStats();
+    loadCategoryFilter();
+  }
+  loadAdminList();
+  loadCashSelect();
+  cashResult.textContent = `Venta registrada — Cambio: ${formatRD(change)} — Comisión para JTL: ${formatRD(commission)}`;
+  cashQty.value = '';
+  cashPaid.value = '';
+};
+
+/* ---------- Filtros y búsqueda ---------- */
+filterCategory.onchange = () => renderProducts(searchInput.value);
+searchInput.oninput = () => renderProducts(searchInput.value);
+
+/* ---------- Panel y carrito móviles ---------- */
+floatingCartBtn.onclick = () => {
+  mobileCartPanel.style.display = 'block';
+};
+document.getElementById('mobile-cart-close').onclick = () => {
+  mobileCartPanel.style.display = 'none';
+};
+
+/* ---------- Cambiar contraseña y alternar pública/privada ---------- */
+changePassBtn.onclick = () => {
+  const cur = adminStoreSelector.value || activeStoreId;
+  const np = (changePassInput.value || '').trim();
+  if(!np) return alert('Ingresa una nueva contraseña');
+  const stores = getStores();
+  const s = stores.find(x=>x.id===cur);
+  if(!s) return;
+  if(!(adminSessionStoreId === 'jtl' || adminSessionStoreId === cur)) return alert('No tienes permiso para cambiar esta contraseña');
+  s.password = np;
+  saveStores(stores);
+  changePassInput.value = '';
+  alert('Contraseña actualizada');
+  populateLoginStores();
+};
+
+togglePublicBtn.onclick = () => {
+  const cur = adminStoreSelector.value || activeStoreId;
+  if(adminSessionStoreId !== 'jtl') return alert('Solo JTL puede cambiar esto');
+  const stores = getStores();
+  const s = stores.find(x=>x.id===cur);
+  if(!s) return;
+  s.isPublic = !s.isPublic;
+  saveStores(stores);
+  renderStoreList();
+  populateLoginStores();
+  alert(s.isPublic ? 'Tienda ahora pública' : 'Tienda ahora privada');
+};
+
+/* guardar/editar monto mensual (solo JTL) */
+saveMonthlyBtn.onclick = () => {
+  if(adminSessionStoreId !== 'jtl') return alert('Solo JTL puede cambiar el monto');
+  const v = Number(monthlyInput.value);
+  if(!v || v <= 0) return alert('Monto inválido');
+  setMonthlyAmount(v);
+  alert('Monto mensual actualizado: RD$' + Number(v).toFixed(2));
+  renderStoreList();
+};
+
+/* Registrar pago mensual (+30 días) - SOLO JTL */
+markPaidBtn.onclick = () => {
+  if(adminSessionStoreId !== 'jtl') return alert('Solo JTL puede registrar pagos.');
+  const cur = adminStoreSelector.value || activeStoreId;
+  markMonthlyPaidFor(cur);
+  renderStoreList();
+  renderStats();
+  alert('Mensualidad registrada para ' + (findStore(cur)?.name || cur) + ' (+30 días).');
+};
+
+/* función para marcar pago y guardar historial */
+function markMonthlyPaidFor(storeId){
+  const stores = getStores();
+  const s = stores.find(x => x.id === storeId);
+  if(!s) return alert('Tienda no encontrada');
+  s.subscriptionPaidUntil = (Number(s.subscriptionPaidUntil) || Date.now()) + SUBSCRIPTION_MS;
+  s.blocked = false;
+  saveStores(stores);
+  // historial en meta
+  const meta = loadMetaFor(storeId);
+  meta.payments = meta.payments || [];
+  meta.payments.push({ when: Date.now(), amount: getMonthlyAmount(), by: 'jtl' });
+  saveMetaFor(storeId, meta);
+}
+
+/* mostrar/ocultar controles JTL segun sesión */
+function renderAdminControlsVisibility(){
+  // monthly control + register pay only for JTL
+  if(adminSessionStoreId === 'jtl'){
+    monthlyControlDiv.style.display = 'block';
+    markPaidBtn.style.display = 'block';
+    monthlyInput.value = getMonthlyAmount();
+  } else {
+    monthlyControlDiv.style.display = 'none';
+    markPaidBtn.style.display = 'none';
+  }
+}
+
+/* ---------- Inicialización pública (vista cliente) ---------- */
+function initPublicUI(){
+  ensureDefaultStores();
+  activeStoreId = getActiveStoreId();
+  const activeStore = findStore(activeStoreId);
+  if(!isSubscriptionActive(activeStore) && activeStoreId !== 'jtl'){
+    showBlockModalFor(activeStoreId);
+  }
+  products = loadProductsFor(activeStoreId);
+  totalRevenue = Number(localStorage.getItem(storeProfitKey(activeStoreId)) || 0);
+  renderHeader();
+  renderProducts();
+  renderCart();
+  renderStats();
+  loadCategoryFilter();
+  populateLoginStores();
+}
+
+/* Cerrar panel admin */
+document.getElementById('close-admin').onclick = () => {
+  adminPanel.style.display = 'none';
+  adminSessionStoreId = null;
+  // Re-enable buttons if previously disabled by block
+  document.querySelectorAll('.btn').forEach(b => { b.disabled = false; b.style.opacity = ''; b.style.pointerEvents = ''; });
+  initPublicUI();
+  if(subscriptionInterval) clearInterval(subscriptionInterval);
+};
+
+/* Reset profit */
+document.getElementById('reset-profit').onclick = () => {
+  const cur = adminStoreSelector.value || activeStoreId;
+  if(!(adminSessionStoreId === 'jtl' || adminSessionStoreId === cur)) return alert('No tienes permiso');
+  if(confirm('¿Seguro que desea resetear las ganancias totales de esta tienda?')){
+    saveProfitFor(cur, 0);
+    savePlatformFor(cur, 0);
+    renderStats();
+    alert('Ganancias y comisiones reseteadas.');
+  }
+};
+
+/* ---------- Mostrar/ocultar controles JTL en cada render de admin */ 
+function renderAdminControlsVisibilitySmall(){
+  // called from initAdminUI and after login
+  renderAdminControlsVisibility();
+}
+
+/* ---------- Inicialización final ---------- */
+applyThemeFromStorage();
+initPublicUI();
+renderHeader();
+startSubscriptionInterval();
+
+</script>
+
+</body>
+</html>
